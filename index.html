@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DiagnozQ — Asisten Terapis Akupunktur</title>
+<style>
+  :root {
+    --bg: #0f1a14;
+    --surface: #162010;
+    --card: #1c2a18;
+    --border: #2d4a24;
+    --accent: #7ab648;
+    --accent-dim: #4a7a28;
+    --gold: #c9a84c;
+    --text: #e8f0e0;
+    --text-muted: #8aaa78;
+    --text-dim: #556644;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, Palatino, serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* HEADER */
+  .header {
+    background: #0a1508;
+    border-bottom: 1px solid var(--border);
+    padding: 16px 16px 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  }
+  .logo {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent-dim), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .app-name { font-size: 18px; font-weight: 700; }
+  .app-sub { font-size: 12px; color: var(--text-muted); }
+
+  /* TABS */
+  .tabs {
+    display: flex; gap: 2px; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 10px 14px; background: transparent; border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted); font-size: 13px;
+    cursor: pointer; white-space: nowrap;
+    font-family: inherit; transition: all 0.2s;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* CONTENT */
+  .content { max-width: 640px; margin: 0 auto; padding: 20px 16px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    color: var(--gold); font-size: 14px; font-weight: 600;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .label {
+    color: var(--text-muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 6px; margin-top: 12px;
+  }
+  .label:first-child { margin-top: 0; }
+
+  /* INPUTS */
+  input, textarea {
+    width: 100%; background: #0f1a14;
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 13px; color: var(--text);
+    font-size: 14px; font-family: inherit; outline: none;
+  }
+  textarea { resize: vertical; }
+
+  /* TAGS */
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted);
+    font-size: 13px; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .tag.selected {
+    border-color: var(--accent);
+    background: rgba(74,122,40,0.3);
+    color: var(--accent);
+  }
+  .hint { color: var(--text-dim); font-size: 11px; margin-top: 8px; }
+
+  /* GRID 2 COL */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ANALYZE BUTTON */
+  .analyze-btn {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--accent-dim), var(--accent));
+    color: #fff; border: none; border-radius: 12px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    transition: opacity 0.3s; letter-spacing: 0.5px;
+  }
+  .analyze-btn:disabled {
+    background: var(--border); color: var(--text-dim); cursor: not-allowed;
+  }
+
+  /* RESULT */
+  .result-box {
+    background: var(--surface); border-radius: 12px;
+    padding: 18px; border: 1px solid var(--border);
+    color: var(--text); font-size: 14px;
+    line-height: 1.8; white-space: pre-wrap;
+    margin-top: 20px;
+  }
+
+  /* ELEMENTS */
+  .elements {
+    display: flex; justify-content: space-around;
+    flex-wrap: wrap; gap: 10px;
+    margin: 20px 0;
+  }
+  .element {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 5px;
+    opacity: 0.3; transition: opacity 0.4s;
+  }
+  .element.active { opacity: 1; }
+  .el-circle {
+    width: 50px; height: 50px; border-radius: 50%;
+    border: 2px solid;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; transition: all 0.4s;
+  }
+  .element.active .el-circle {
+    box-shadow: 0 0 16px currentColor;
+  }
+  .el-name { font-size: 11px; font-weight: 600; text-align: center; }
+  .el-organ { font-size: 10px; color: var(--text-dim); text-align: center; }
+
+  /* POINTS */
+  .points-section { margin-top: 20px; }
+  .points-title { color: var(--gold); font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .el-points { margin-bottom: 14px; }
+  .el-points-name { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .point-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .point-tag {
+    border-radius: 8px; padding: 4px 11px;
+    font-size: 12px; font-weight: 500;
+    border: 1px solid;
+  }
+
+  /* FLOAT BTN */
+  .float-btn {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 30px;
+    padding: 13px 26px; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 8px 28px rgba(122,182,72,0.4);
+    white-space: nowrap;
+  }
+
+  /* ICON BOX */
+  .icon-box {
+    background: var(--surface); border-radius: 12px;
+    padding: 16px; text-align: center;
+    border: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .icon-box .big-icon { font-size: 46px; }
+  .icon-box p { color: var(--text-muted); font-size: 13px; margin-top: 6px; }
+
+  /* API KEY INPUT */
+  .apikey-section {
+    background: #1a1000;
+    border: 1px solid #4a3800;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .apikey-section p {
+    color: #c9a84c;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .apikey-row { display: flex; gap: 8px; }
+  .apikey-row input { flex: 1; }
+  .save-btn {
+    padding: 11px 16px; background: var(--accent-dim);
+    color: #fff; border: none; border-radius: 10px;
+    font-size: 13px; cursor: pointer; font-family: inherit;
+    white-space: nowrap;
+  }
+  .saved-badge {
+    color: var(--accent); font-size: 12px; margin-top: 6px; display: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">☯</div>
+    <div>
+      <div class="app-name">DiagnozQ</div>
+      <div class="app-sub">Asisten Terapis Akupunktur & TCM</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('anamnesa')">📋 Anamnesa</button>
+    <button class="tab" onclick="showTab('lidah')">👅 Lidah</button>
+    <button class="tab" onclick="showTab('nadi')">💓 Nadi</button>
+    <button class="tab" onclick="showTab('fisik')">🧍 Fisik</button>
+    <button class="tab" onclick="showTab('analisis')">🧠 Analisis</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ANAMNESA -->
+  <div class="page active" id="page-anamnesa">
+    <div class="card">
+      <div class="card-title">👤 Identitas Klien</div>
+      <div class="grid2">
+        <div>
+          <div class="label">Nama Klien</div>
+          <input type="text" id="nama" placeholder="Nama klien...">
+        </div>
+        <div>
+          <div class="label">Usia</div>
+          <input type="number" id="usia" placeholder="Tahun">
+        </div>
+      </div>
+      <div class="label">Jenis Kelamin</div>
+      <div class="tags">
+        <button class="tag" onclick="selectOne(this,'gender')">Laki-laki</button>
+        <button class="tag" onclick="selectOne(this,'gender')">Perempuan</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🩺 Keluhan Utama</div>
+      <textarea id="keluhan" rows="4" placeholder="Tuliskan keluhan utama klien secara detail..."></textarea>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📖 Riwayat Penyakit</div>
+      <div class="label">Riwayat Penyakit Sekarang & Dahulu</div>
+      <textarea id="riwayat" rows="3" placeholder="Riwayat penyakit, operasi, pengobatan sebelumnya..."></textarea>
+      <div class="label">Riwayat Penyakit Keluarga</div>
+      <textarea id="riwayat-keluarga" rows="2" placeholder="Penyakit menurun dalam keluarga..."></textarea>
+    </div>
+  </div>
+
+  <!-- LIDAH -->
+  <div class="page" id="page-lidah">
+    <div class="icon-box">
+      <div class="big-icon">👅</div>
+      <p>Diagnosa Lidah (舌诊)</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔴 Warna Tubuh Lidah</div>
+      <div class="tags">
+        <button class="tag" onclick="selectOne(this,'tongue-color')">Pucat</button>
+        <button class="tag" onclick="selectOne(this,'tongue-color')">Merah Muda Normal</button>
+        <button class="tag" onclick="selectOne(this,'tongue-color')">Merah</button>
+        <button class="tag" onclick="selectOne(this,'tongue-color')">Merah Gelap</button>
+        <button class="tag" onclick="selectOne(this,'tongue-color')">Ungu/Kebiruan</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⬜ Selaput Lidah (Tai)</div>
+      <div class="tags">
+        <button class="tag" onclick="selectOne(this,'tongue-coat')">Tipis Putih (normal)</button>
+        <button class="tag" onclick="selectOne(this,'tongue-coat')">Tebal Putih</button>
+        <button class="tag" onclick="selectOne(this,'tongue-coat')">Kuning Tipis</button>
+        <button class="tag" onclick="selectOne(this,'tongue-coat')">Kuning Tebal</button>
+        <button class="tag" onclick="selectOne(this,'tongue-coat')">Hitam/Abu</button>
+        <button class="tag" onclick="selectOne(this,'tongue-coat')">Tidak Ada Selaput</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📐 Bentuk Lidah</div>
+      <div class="tags">
+        <button class="tag multi" onclick="toggleTag(this)">Normal</button>
+        <button class="tag multi" onclick="toggleTag(this)">Bengkak/Gemuk</button>
+        <button class="tag multi" onclick="toggleTag(this)">Kurus/Kecil</button>
+        <button class="tag multi" onclick="toggleTag(this)">Retak di Tengah</button>
+        <button class="tag multi" onclick="toggleTag(this)">Bergerigi Pinggir</button>
+        <button class="tag multi" onclick="toggleTag(this)">Tremor</button>
+      </div>
+      <div class="hint">* Dapat pilih lebih dari satu</div>
+    </div>
+  </div>
+
+  <!-- NADI -->
+  <div class="page" id="page-nadi">
+    <div class="icon-box">
+      <div class="big-icon">💓</div>
+      <p>Diagnosa Nadi (脉诊)</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⏱️ Frekuensi Nadi</div>
+      <div class="tags">
+        <button class="tag" onclick="selectOne(this,'pulse-rate')">Lambat (&lt;60)</button>
+        <button class="tag" onclick="selectOne(this,'pulse-rate')">Normal (60-90)</button>
+        <button class="tag" onclick="selectOne(this,'pulse-rate')">Cepat (&gt;90)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Kualitas Nadi</div>
+      <div class="tags">
+        <button class="tag multi" onclick="toggleTag(this)">Mengambang (浮)</button>
+        <button class="tag multi" onclick="toggleTag(this)">Tenggelam (沉)</button>
+        <button class="tag multi" onclick="toggleTag(this)">Kuat (实)</button>
+        <button class="tag multi" onclick="toggleTag(this)">Lemah (虚)</button>
+        <button class="tag multi" onclick="toggleTag(this)">Licin (滑)</button>
+        <button class="tag multi" onclick="toggleTag(this)">Kasar (涩)</button>
+        <button class="tag multi" onclick="toggleTag(this)">Tegang (弦)</button>
+        <button class="tag multi" onclick="toggleTag(this)">Tipis (细)</button>
+        <button class="tag multi" onclick="toggleTag(this)">Besar (洪)</button>
+      </div>
+      <div class="hint">* Dapat pilih lebih dari satu</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 Posisi Nadi Lemah</div>
+      <div class="tags">
+        <button class="tag multi" onclick="toggleTag(this)">Chi kiri lemah</button>
+        <button class="tag multi" onclick="toggleTag(this)">Guan kiri lemah</button>
+        <button class="tag multi" onclick="toggleTag(this)">Cun kiri lemah</button>
+        <button class="tag multi" onclick="toggleTag(this)">Chi kanan lemah</button>
+        <button class="tag multi" onclick="toggleTag(this)">Guan kanan lemah</button>
+        <button class="tag multi" onclick="toggleTag(this)">Cun kanan lemah</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FISIK -->
+  <div class="page" id="page-fisik">
+    <div class="card">
+      <div class="card-title">📍 Lokasi Nyeri</div>
+      <div class="tags">
+        <button class="tag multi" onclick="toggleTag(this)">Kepala</button>
+        <button class="tag multi" onclick="toggleTag(this)">Leher</button>
+        <button class="tag multi" onclick="toggleTag(this)">Bahu</button>
+        <button class="tag multi" onclick="toggleTag(this)">Dada</button>
+        <button class="tag multi" onclick="toggleTag(this)">Punggung Atas</button>
+        <button class="tag multi" onclick="toggleTag(this)">Perut</button>
+        <button class="tag multi" onclick="toggleTag(this)">Punggung Bawah</button>
+        <button class="tag multi" onclick="toggleTag(this)">Pinggang</button>
+        <button class="tag multi" onclick="toggleTag(this)">Pinggul</button>
+        <button class="tag multi" onclick="toggleTag(this)">Lutut</button>
+        <button class="tag multi" onclick="toggleTag(this)">Pergelangan Kaki</button>
+        <button class="tag multi" onclick="toggleTag(this)">Tangan</button>
+        <button class="tag multi" onclick="toggleTag(this)">Lengan</button>
+        <button class="tag multi" onclick="toggleTag(this)">Kaki</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🌬️ Kondisi Nafas</div>
+      <div class="tags">
+        <button class="tag" onclick="selectOne(this,'breath')">Normal</button>
+        <button class="tag" onclick="selectOne(this,'breath')">Pendek/Cepat</button>
+        <button class="tag" onclick="selectOne(this,'breath')">Dalam/Lambat</button>
+        <button class="tag" onclick="selectOne(this,'breath')">Berbunyi/Mengi</button>
+        <button class="tag" onclick="selectOne(this,'breath')">Lemah/Tidak Bertenaga</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">😶 Rona Wajah</div>
+      <div class="tags">
+        <button class="tag" onclick="selectOne(this,'face')">Pucat/Putih</button>
+        <button class="tag" onclick="selectOne(this,'face')">Kemerahan</button>
+        <button class="tag" onclick="selectOne(this,'face')">Kuning/Kusam</button>
+        <button class="tag" onclick="selectOne(this,'face')">Kehijauan/Kebiruan</button>
+        <button class="tag" onclick="selectOne(this,'face')">Kehitaman/Gelap</button>
+      </div>
+      <div class="label" style="margin-top:16px">Catatan Tambahan</div>
+      <textarea id="catatan" rows="3" placeholder="Emosi dominan, pola tidur, nafsu makan..."></textarea>
+    </div>
+  </div>
+
+  <!-- ANALISIS -->
+  <div class="page" id="page-analisis">
+
+    <!-- API KEY -->
+    <div class="apikey-section">
+      <p>🔑 Masukkan Groq API Key kamu:</p>
+      <div class="apikey-row">
+        <input type="password" id="apikey-input" placeholder="gsk_...">
+        <button class="save-btn" onclick="saveKey()">Simpan</button>
+      </div>
+      <div class="saved-badge" id="saved-badge">✅ API Key tersimpan</div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(135deg, #1c2a18, #0d1f0a);">
+      <div class="card-title" style="color: var(--accent); font-size: 15px;">
+        🧠 Analisis AI — Perjalanan 5 Unsur & Titik Akupunktur
+      </div>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+        Berdasarkan data anamnesa, diagnosa lidah, nadi, dan gejala lainnya.
+      </p>
+      <button class="analyze-btn" id="analyze-btn" onclick="doAnalyze()">
+        ✨ Analisis Sekarang
+      </button>
+
+      <div id="result-area" style="display:none">
+        <!-- Elements -->
+        <div class="elements" id="elements-display">
+          <div class="element" id="el-Wood" data-color="#48a848">
+            <div class="el-circle" style="border-color:#48a848; color:#48a848">🌿</div>
+            <div class="el-name" style="color:#48a848">Kayu (木)</div>
+            <div class="el-organ">Hati / Empedu</div>
+          </div>
+          <div class="element" id="el-Fire" data-color="#c84848">
+            <div class="el-circle" style="border-color:#c84848; color:#c84848">🔥</div>
+            <div class="el-name" style="color:#c84848">Api (火)</div>
+            <div class="el-organ">Jantung / U.Kecil</div>
+          </div>
+          <div class="element" id="el-Earth" data-color="#c9a848">
+            <div class="el-circle" style="border-color:#c9a848; color:#c9a848">🌍</div>
+            <div class="el-name" style="color:#c9a848">Tanah (土)</div>
+            <div class="el-organ">Limpa / Lambung</div>
+          </div>
+          <div class="element" id="el-Metal" data-color="#a8a8a8">
+            <div class="el-circle" style="border-color:#a8a8a8; color:#a8a8a8">⚪</div>
+            <div class="el-name" style="color:#a8a8a8">Logam (金)</div>
+            <div class="el-organ">Paru / U.Besar</div>
+          </div>
+          <div class="element" id="el-Water" data-color="#4878b8">
+            <div class="el-circle" style="border-color:#4878b8; color:#4878b8">💧</div>
+            <div class="el-name" style="color:#4878b8">Air (水)</div>
+            <div class="el-organ">Ginjal / K.Kemih</div>
+          </div>
+        </div>
+
+        <!-- Analysis text -->
+        <div class="result-box" id="result-text"></div>
+
+        <!-- Points -->
+        <div class="points-section" id="points-section" style="display:none">
+          <div class="points-title">📍 Saran Titik Akupunktur</div>
+          <div id="points-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- FLOAT BUTTON (hidden on analisis tab) -->
+<button class="float-btn" id="float-btn" onclick="showTab('analisis')">
+  ✨ Ke Analisis AI →
+</button>
+
+<script>
+const POINTS = {
+  Wood:  ["LV3 (Taichong)","GB34 (Yanglingquan)","LV14 (Qimen)","GB21 (Jianjing)","LV8 (Ququan)"],
+  Fire:  ["HT7 (Shenmen)","PC6 (Neiguan)","HT3 (Shaohai)","SI3 (Houxi)","CV14 (Juque)"],
+  Earth: ["SP6 (Sanyinjiao)","ST36 (Zusanli)","SP3 (Taibai)","ST25 (Tianshu)","CV12 (Zhongwan)"],
+  Metal: ["LU9 (Taiyuan)","LI4 (Hegu)","LU7 (Lieque)","LI11 (Quchi)","CV17 (Shanzhong)"],
+  Water: ["KD3 (Taixi)","KD7 (Fuliu)","BL23 (Shenshu)","KD1 (Yongquan)","GV4 (Mingmen)"],
+};
+
+const EL_INFO = {
+  Wood:  { name:"Kayu (木)", organ:"Hati / Empedu", color:"#48a848" },
+  Fire:  { name:"Api (火)",  organ:"Jantung / U.Kecil", color:"#c84848" },
+  Earth: { name:"Tanah (土)",organ:"Limpa / Lambung", color:"#c9a848" },
+  Metal: { name:"Logam (金)",organ:"Paru / U.Besar", color:"#a8a8a8" },
+  Water: { name:"Air (水)",  organ:"Ginjal / K.Kemih", color:"#4878b8" },
+};
+
+let apiKey = localStorage.getItem('diagnozq_apikey') || '';
+if (apiKey) {
+  document.getElementById('apikey-input').value = apiKey;
+  document.getElementById('saved-badge').style.display = 'block';
+}
+
+function saveKey() {
+  apiKey = document.getElementById('apikey-input').value.trim();
+  localStorage.setItem('diagnozq_apikey', apiKey);
+  document.getElementById('saved-badge').style.display = 'block';
+}
+
+function showTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.textContent.toLowerCase().includes(id === 'anamnesa' ? 'anamnesa' :
+        id === 'lidah' ? 'lidah' : id === 'nadi' ? 'nadi' :
+        id === 'fisik' ? 'fisik' : 'analisis')) t.classList.add('active');
+  });
+  document.getElementById('float-btn').style.display = id === 'analisis' ? 'none' : 'block';
+}
+
+function selectOne(btn, group) {
+  document.querySelectorAll(`.tag:not(.multi)`).forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(group)) {
+      t.classList.remove('selected');
+    }
+  });
+  btn.classList.toggle('selected');
+}
+
+function toggleTag(btn) {
+  btn.classList.toggle('selected');
+}
+
+function getSelected(group) {
+  const results = [];
+  document.querySelectorAll('.tag').forEach(t => {
+    if (t.classList.contains('selected')) {
+      const oc = t.getAttribute('onclick') || '';
+      if (group === 'multi' && t.classList.contains('multi')) results.push(t.textContent.trim());
+      else if (oc.includes(group)) results.push(t.textContent.trim());
+    }
+  });
+  return results;
+}
+
+function getAllMulti(pageId) {
+  const results = [];
+  document.querySelectorAll(`#page-${pageId} .tag.multi.selected`).forEach(t => {
+    results.push(t.textContent.trim());
+  });
+  return results;
+}
+
+function buildPrompt() {
+  const nama = document.getElementById('nama').value || '-';
+  const usia = document.getElementById('usia').value || '-';
+  const gender = getSelected('gender')[0] || '-';
+  const keluhan = document.getElementById('keluhan').value || '-';
+  const riwayat = document.getElementById('riwayat').value || '-';
+  const riwayatKel = document.getElementById('riwayat-keluarga').value || '-';
+  const tongueColor = getSelected('tongue-color')[0] || '-';
+  const tongueCoat = getSelected('tongue-coat')[0] || '-';
+  const tongueShape = getAllMulti('lidah').join(', ') || '-';
+  const pulseRate = getSelected('pulse-rate')[0] || '-';
+  const pulseQual = getAllMulti('nadi').join(', ') || '-';
+  const painLoc = getAllMulti('fisik').filter(x => !['Normal','Pendek/Cepat','Dalam/Lambat','Berbunyi/Mengi','Lemah/Tidak Bertenaga','Pucat/Putih','Kemerahan','Kuning/Kusam','Kehijauan/Kebiruan','Kehitaman/Gelap'].includes(x)).join(', ') || '-';
+  const breath = getSelected('breath')[0] || '-';
+  const face = getSelected('face')[0] || '-';
+  const catatan = document.getElementById('catatan').value || '-';
+
+  return `Kamu adalah ahli Akupunktur dan TCM berpengalaman. Analisis data klien berikut.
+
+DATA KLIEN:
+- Nama: ${nama} | Usia: ${usia} | Jenis Kelamin: ${gender}
+
+ANAMNESA:
+- Keluhan Utama: ${keluhan}
+- Riwayat Penyakit: ${riwayat}
+- Riwayat Keluarga: ${riwayatKel}
+
+DIAGNOSA LIDAH:
+- Warna: ${tongueColor} | Selaput: ${tongueCoat} | Bentuk: ${tongueShape}
+
+DIAGNOSA NADI:
+- Frekuensi: ${pulseRate} | Kualitas: ${pulseQual}
+
+GEJALA LAIN:
+- Lokasi Nyeri: ${painLoc}
+- Nafas: ${breath} | Rona Wajah: ${face}
+- Catatan: ${catatan}
+
+Berikan analisis lengkap dalam Bahasa Indonesia dengan format:
+
+1. POLA DISHARMONI TCM
+2. PERJALANAN 5 UNSUR (unsur mana terganggu, hubungan Sheng/Ko)
+3. ORGAN YANG TERLIBAT
+4. INTERPRETASI GEJALA
+5. SARAN TERAPIS
+
+Gunakan bahasa mudah dipahami terapis namun berterminologi TCM.`;
+}
+
+async function doAnalyze() {
+  if (!apiKey) {
+    alert('Masukkan Groq API Key terlebih dahulu!');
+    return;
+  }
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sedang menganalisis...';
+  document.getElementById('result-area').style.display = 'none';
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey,
+      },
+      body: JSON.stringify({
+        model: 'llama3-70b-8192',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: buildPrompt() }],
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'API error');
+
+    const text = data.choices[0].message.content;
+
+    // Detect active elements
+    const active = [];
+    if (/kayu|hati|empedu|wood|liver/i.test(text)) active.push('Wood');
+    if (/api|jantung|usus kecil|fire|heart/i.test(text)) active.push('Fire');
+    if (/tanah|limpa|lambung|earth|spleen/i.test(text)) active.push('Earth');
+    if (/logam|paru|usus besar|metal|lung/i.test(text)) active.push('Metal');
+    if (/air|ginjal|kandung kemih|water|kidney/i.test(text)) active.push('Water');
+
+    // Show elements
+    document.querySelectorAll('.element').forEach(el => el.classList.remove('active'));
+    active.forEach(el => {
+      const elDiv = document.getElementById('el-' + el);
+      if (elDiv) {
+        elDiv.classList.add('active');
+        const color = elDiv.getAttribute('data-color');
+        elDiv.querySelector('.el-circle').style.background = color + '30';
+      }
+    });
+
+    // Show text
+    document.getElementById('result-text').textContent = text;
+
+    // Show points
+    if (active.length > 0) {
+      const pointsList = document.getElementById('points-list');
+      pointsList.innerHTML = '';
+      active.forEach(elName => {
+        const info = EL_INFO[elName];
+        const points = POINTS[elName];
+        const div = document.createElement('div');
+        div.className = 'el-points';
+        div.innerHTML = `
+          <div class="el-points-name" style="color:${info.color}">${
+            elName==='Wood'?'🌿':elName==='Fire'?'🔥':elName==='Earth'?'🌍':elName==='Metal'?'⚪':'💧'
+          } ${info.name} — ${info.organ}</div>
+          <div class="point-tags">${points.map(p =>
+            `<span class="point-tag" style="color:${info.color};border-color:${info.color}50;background:${info.color}15">${p}</span>`
+          ).join('')}</div>
+        `;
+        pointsList.appendChild(div);
+      });
+      document.getElementById('points-section').style.display = 'block';
+    }
+
+    document.getElementById('result-area').style.display = 'block';
+
+  } catch (err) {
+    document.getElementById('result-text').textContent = '❌ Error: ' + err.message;
+    document.getElementById('result-area').style.display = 'block';
+    document.getElementById('points-section').style.display = 'none';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✨ Analisis Sekarang';
+}
+</script>
+</body>
+</html>
